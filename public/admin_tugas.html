@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <title>Daftar Tugas Petugas</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #F5F0CD;
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
+
+    nav {
+      background-color: #347433;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 20px;
+      border-bottom-left-radius: 12px;
+      border-bottom-right-radius: 12px;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    nav a {
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+      padding: 8px 16px;
+      border-radius: 8px;
+    }
+
+    nav a:hover,
+    nav a.active {
+      background-color: #285f28;
+    }
+
+    .logout-btn {
+      background-color: #b72e2e;
+      padding: 8px 14px;
+      border-radius: 8px;
+    }
+
+    .welcome {
+      color: white;
+      font-weight: bold;
+      margin-right: 16px;
+    }
+
+    .container {
+      padding: 20px;
+    }
+
+    h1 {
+      color: #347433;
+      text-align: center;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-top: 20px;
+    }
+
+    th {
+      background-color: #347433;
+      color: white;
+      padding: 12px;
+      text-align: center;
+    }
+
+    td {
+      padding: 12px;
+      border: 1px solid #ddd;
+      text-align: center;
+      vertical-align: middle;
+      font-size: 14px;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+
+    tr:hover {
+      background-color: #f1f1f1;
+    }
+
+    td img {
+      max-width: 100px;
+      border-radius: 8px;
+      display: block;
+      margin: auto;
+    }
+
+    .btn {
+      padding: 6px 10px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      color: white;
+    }
+
+    .btn-confirm {
+      background-color: #ff9800;
+    }
+
+    .status-success {
+      color: green;
+      font-weight: bold;
+    }
+
+    .status-reject {
+      color: red;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+  <nav>
+    <div class="nav-links">
+      <a href="admin_dashboard.html"><i class="fas fa-chart-pie"></i> Dashboard</a>
+      <a href="admin_laporan.html"><i class="fas fa-list"></i> Daftar Laporan</a>
+      <a href="admin_tugas.html" class="active"><i class="fas fa-tasks"></i> Daftar Tugas</a>
+      <a href="admin_peta.html"><i class="fas fa-map-location-dot"></i> Peta</a>
+    </div>
+    <div class="nav-links">
+      <span class="welcome"><i class="fas fa-user-shield"></i> Admin</span>
+      <a href="admin_logout.html" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <h1>Daftar Tugas Petugas</h1>
+
+    <table>
+      <thead>
+        <tr>
+          <th>ID Tugas</th>
+          <th>ID Laporan</th>
+          <th>Latitude</th>
+          <th>Longitude</th>
+          <th>Foto Bukti</th>
+          <th>ID Petugas</th>
+          <th>Status</th>
+          <th>Diterima</th>
+          <th>Selesai</th>
+          <th>Status Final</th>
+          <th>Verified By</th>
+          <th>Verified At</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="tugas-body">
+        <tr>
+          <td colspan="13">Loading...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    async function loadTugas() {
+      try {
+        const res = await fetch("/admin/tugas");
+        const tugasList = await res.json();
+
+        const tbody = document.getElementById("tugas-body");
+        tbody.innerHTML = "";
+
+        if (!Array.isArray(tugasList) || tugasList.length === 0) {
+          tbody.innerHTML = "<tr><td colspan='13'>Belum ada tugas.</td></tr>";
+          return;
+        }
+
+        tugasList.forEach(t => {
+          const tr = document.createElement("tr");
+
+          const fotoHtml = t.img_url
+            ? `<img src="${t.img_url}" alt="Bukti">`
+            : "Belum ada";
+
+          // Tombol aksi fleksibel
+          let aksiBtn = "-";
+          const statusFinalLower = (t.status_final || "").toLowerCase();
+
+          if (statusFinalLower.includes("menunggu") || statusFinalLower.includes("pending")) {
+            aksiBtn = `
+              <button class="btn btn-confirm"
+                onclick="confirmDone(${t.tugas_id})">
+                Konfirmasi Selesai
+              </button>
+            `;
+          } 
+          else if (statusFinalLower.includes("disetujui")) {
+            aksiBtn = `<span class="status-success">✔ Selesai</span>`;
+          } 
+          else if (statusFinalLower.includes("ditolak")) {
+            aksiBtn = `<span class="status-reject">✖ Ditolak</span>`;
+          }
+
+          tr.innerHTML = `
+            <td>${t.tugas_id}</td>
+            <td>${t.report_id}</td>
+            <td>${t.latitude || "-"}</td>
+            <td>${t.longitude || "-"}</td>
+            <td>${fotoHtml}</td>
+            <td>${t.petugas_id || "-"}</td>
+            <td>${t.status || "-"}</td>
+            <td>${t.assigned_at ? new Date(t.assigned_at).toLocaleString() : "-"}</td>
+            <td>${t.completed_at ? new Date(t.completed_at).toLocaleString() : "-"}</td>
+            <td>${t.status_final || "-"}</td>
+            <td>${t.verified_by || "-"}</td>
+            <td>${t.verified_at ? new Date(t.verified_at).toLocaleString() : "-"}</td>
+            <td>${aksiBtn}</td>
+          `;
+
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        console.error("❌ Gagal memuat tugas:", err);
+        document.getElementById("tugas-body").innerHTML =
+          "<tr><td colspan='13'>Gagal memuat data tugas.</td></tr>";
+      }
+    }
+
+    async function confirmDone(tugasId) {
+      if (!confirm("Yakin ingin menyetujui tugas ini?")) return;
+
+      const res = await fetch("/admin/confirm-tugas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tugas_id: tugasId,
+          status_final: "disetujui"
+        })
+      });
+
+      const data = await res.json();
+      alert(data.message || data.error);
+      loadTugas();
+    }
+
+    loadTugas();
+  </script>
+</body>
+</html>

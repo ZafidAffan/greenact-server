@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard Admin</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --green: #347433;
+      --yellow: #f0ad4e;
+      --blue: #5bc0de;
+      --success: #5cb85c;
+      --background: #F5F0CD;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: var(--background);
+    }
+
+    /* ===== NAVBAR ===== */
+    nav {
+      background-color: var(--green);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 28px;
+      border-bottom-left-radius: 12px;
+      border-bottom-right-radius: 12px;
+      flex-wrap: wrap;
+    }
+
+    .nav-left a {
+      color: white;
+      text-decoration: none;
+      font-weight: 600;
+      padding: 10px 16px;
+      border-radius: 8px;
+      transition: background-color 0.2s;
+    }
+
+    .nav-left a:hover,
+    .nav-left a.active {
+      background-color: #285f28;
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .admin-info {
+      color: white;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 15px;
+    }
+
+    .logout-btn {
+      background-color: #b72e2e;
+      color: white;
+      text-decoration: none;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-weight: bold;
+      transition: background-color 0.2s;
+    }
+
+    .logout-btn:hover {
+      background-color: #922222;
+    }
+
+    /* ===== KONTEN DASHBOARD ===== */
+    .container {
+      padding: 40px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 30px;
+    }
+
+    h1 {
+      color: var(--green);
+      font-size: 28px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .cards {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      flex-wrap: wrap;
+    }
+
+    .card {
+      background: white;
+      padding: 30px 24px;
+      border-radius: 16px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      width: 240px;
+      transition: transform 0.2s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+    }
+
+    .card i {
+      font-size: 48px;
+      margin-bottom: 15px;
+    }
+
+    .card h2 {
+      margin: 0;
+      font-size: 36px;
+      color: var(--green);
+    }
+
+    .card p {
+      margin-top: 12px;
+      font-weight: bold;
+      font-size: 16px;
+    }
+
+    .pending {
+      color: var(--yellow);
+    }
+
+    .proses {
+      color: var(--blue);
+    }
+
+    .selesai {
+      color: var(--success);
+    }
+
+    .chart-container {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+      padding: 24px;
+      margin-top: 40px;
+      width: 90%;
+      max-width: 500px;
+    }
+
+    .chart-container h3 {
+      text-align: center;
+      color: var(--green);
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 600px) {
+      nav {
+        flex-direction: column;
+        gap: 10px;
+      }
+      .nav-left, .nav-right {
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== NAVBAR ===== -->
+  <nav>
+    <div class="nav-left">
+      <a href="/admin/dashboard" class="active"><i class="fas fa-chart-pie"></i> Dashboard</a>
+      <a href="/admin_laporan.html"><i class="fas fa-list"></i> Daftar Laporan</a>
+      <a href="admin_tugas.html"><i class="fas fa-task"></i> Tugas</a>
+      <a href="/admin_peta.html"><i class="fas fa-map-location-dot"></i> Peta</a>
+    </div>
+    <div class="nav-right">
+      <span class="welcome"><i class="fas fa-user-shield"></i> Admin</span>
+      <a href="/admin/logout" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </div>
+  </nav>
+
+  <!-- ===== DASHBOARD CONTENT ===== -->
+  <div class="container">
+    <h1><i class="fas fa-house-user"></i> Selamat Datang, Admin!</h1>
+
+    <div class="cards">
+      <div class="card pending">
+        <i class="fas fa-envelope-open-text"></i>
+        <h2 id="pending-count">0</h2>
+        <p>Di Laporkan</p>
+      </div>
+
+      <div class="card proses">
+        <i class="fas fa-spinner fa-spin"></i>
+        <h2 id="proses-count">0</h2>
+        <p>Di Proses</p>
+      </div>
+
+      <div class="card selesai">
+        <i class="fas fa-check-circle"></i>
+        <h2 id="selesai-count">0</h2>
+        <p>Selesai</p>
+      </div>
+    </div>
+
+    <div class="chart-container">
+      <h3><i class="fas fa-chart-pie"></i> Diagram Status Laporan</h3>
+      <canvas id="statusChart"></canvas>
+    </div>
+  </div>
+
+  <!-- ===== SCRIPT ===== -->
+  <script>
+    async function loadData() {
+      const res = await fetch('/admin/dashboard-data');
+      const data = await res.json();
+
+      if (data.success) {
+        document.getElementById('pending-count').textContent = data.pending;
+        document.getElementById('proses-count').textContent = data.proses;
+        document.getElementById('selesai-count').textContent = data.selesai;
+
+        new Chart(document.getElementById('statusChart'), {
+          type: 'pie',
+          data: {
+            labels: ['Di Laporkan', 'Di Proses', 'Selesai'],
+            datasets: [{
+              data: [data.pending, data.proses, data.selesai],
+              backgroundColor: ['#f0ad4e', '#5bc0de', '#5cb85c']
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { position: 'bottom' }
+            }
+          }
+        });
+      }
+    }
+    loadData();
+  </script>
+
+</body>
+</html>
