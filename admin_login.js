@@ -1,6 +1,6 @@
 // admin_login.js
 const express = require('express');
-const bcrypt = require('bcrypt'); // untuk verifikasi password hash
+const bcrypt = require('bcryptjs'); // untuk verifikasi password hash
 const session = require('express-session');
 const pool = require('./db'); // db.js ada di root folder
 
