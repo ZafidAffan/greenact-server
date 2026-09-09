@@ -1,0 +1,89 @@
+Dokumentasi Format Respon Endpoint Admin Action
+
+1. Teruskan Laporan (PUT /api/admin/terima-laporan/:report_id)
+
+Success Response (200 OK):
+
+JSON
+{
+  "success": true,
+  "message": "Laporan berhasil diverifikasi dan diteruskan ke Kepala Desa!"
+}
+Error Response (400 Bad Request - Laporan sudah diproses):
+
+JSON
+{
+  "error": "Laporan tidak ditemukan atau sudah diproses sebelumnya."
+}
+Error Response (404 Not Found):
+
+JSON
+{
+  "error": "Laporan tidak ditemukan."
+}
+Error Response (500 Internal Server Error):
+
+JSON
+{
+  "error": "Gagal memperbarui status di database: [pesan_error]"
+}
+2. Ambil Daftar Bukti (GET /api/admin/bukti-list)
+
+Success Response (200 OK):
+
+JSON
+{
+  "success": true,
+  "data": [
+    {
+      "tugas_id": 1,
+      "report_id": 10,
+      "petugas_id": 3,
+      "status": "selesai",
+      "status_final": null,
+      "bukti_url": "upload/bukti_contoh.jpg",
+      "completed_at": "2026-09-09T10:00:00.000Z",
+      "address": "Jl. Contoh Alamat No. 5"
+    }
+  ]
+}
+Error Response (500 Internal Server Error):
+
+JSON
+{
+  "error": "Gagal mengambil daftar bukti: [pesan_error]"
+}
+3. Verifikasi Bukti Tugas (POST /api/admin/verify-bukti)
+
+Expected Request Body:
+
+JSON
+{
+  "report_id": 10,
+  "status_final": "diterima"
+}
+Success Response (200 OK):
+
+JSON
+{
+  "success": true,
+  "message": "Bukti tugas berhasil diverifikasi dengan status: diterima"
+}
+Error Response (400 Bad Request - Field kosong):
+
+JSON
+{
+  "error": "report_id dan status_final wajib diisi"
+}
+Error Response (404 Not Found):
+
+JSON
+{
+  "error": "Tugas dengan report_id tersebut tidak ditemukan."
+}
+Error Response (500 Internal Server Error):
+
+JSON
+{
+  "error": "Gagal memverifikasi bukti: [pesan_error]"
+}

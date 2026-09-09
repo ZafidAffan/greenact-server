@@ -2,7 +2,11 @@
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
-const cors = require('cors'); // <-- 1. Tambah library CORS
+const cors = require('cors');
+const session = require('express-session');
+
+// 1. Import isAuthenticated dan requireRole sekaligus dari middleware/auth
+const { isAuthenticated, requireRole } = require('./middleware/auth'); 
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -11,9 +15,9 @@ const PORT = process.env.PORT || 8080;
 // MIDDLEWARE GLOBAL
 // =======================
 
-// 2. Pasang CORS agar frontend (Live Server) bisa akses API Node.js tanpa diblokir
 app.use(cors({
-  origin: '*', // Izinkan semua origin (Flutter / Browser / Live Server)
+  origin: true, 
+  credentials: true, // Wajib agar cookie session / token terkirim dari frontend/Postman
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
@@ -22,68 +26,67 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve folder upload (gambar, dokumen, dll.)
-app.use('/upload', express.static('upload'));
+// Konfigurasi express-session
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: false, // Set true jika sudah menggunakan HTTPS di production
+      maxAge: 1000 * 60 * 60 * 24, // Sesi aktif selama 24 jam
+    }
+  })
+);
 
-// Serve folder public (HTML, CSS, JS)
+// Serve folder upload & public
+app.use('/upload', express.static('upload'));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // =======================
-// ROUTES USER
+// ROUTES USER (Warga)
 // =======================
-app.use('/login', require('./login'));
-app.use('/register', require('./register'));
-app.use('/report', require('./report'));
-app.use('/locations', require('./get_locations')); 
-app.use('/report-status', require('./get_report_status'));
-app.use('/user', require('./get_user'));
-app.use('/', require("./wilayah"));
+app.use('/api/warga/auth/', require('./routes/auth/wargaAuth.routes'));
+app.use('/locations', require('./routes/get_location.routes')); 
+app.use('/report-status', require('./routes/warga/wargaStatus.routes'));
+app.use('/user', require('./routes/warga/wargaProfile.routes'));
+app.use('/', require("./routes/warga/wilayah.routes"));
+
+// Rute yang membutuhkan hak akses khusus warga (sudah login + role 'warga')
+app.use('/report', isAuthenticated, requireRole(['warga']), require('./routes/warga/createReport.routes')); //
+app.use('/user-report', isAuthenticated, requireRole(['warga']), require('./routes/warga/wargaReport.routes'));
 
 // =======================
 // ROUTES PETUGAS
 // =======================
-app.use('/login_petugas', require('./login_petugas'));
-app.use('/register-petugas', require('./register_petugas'));
-app.use('/get-tugas', require('./get_tugas'));
-app.use('/upload-bukti', require('./upload_bukti'));
-app.use('/user-report', require('./user_report'));
 
-// =======================
-// ROUTES ADMIN (DIBERSIHKAN & DIGABUNG)
-// =======================
-// Gabungkan semua rute admin di bawah prefix /admin tanpa bentrok
-app.use('/admin', require('./admin_login'));
-app.use('/admin', require('./admin_register'));
-app.use('/admin', require('./admin_dashboard'));
-app.use('/admin', require('./admin_laporan'));
-app.use('/admin', require('./admin_tugas'));
-app.use('/admin', require('./terima_laporan'));
+app.use('/petugas', isAuthenticated, requireRole(['petugas']), require('./routes/petugas/petugasTask.routes'));
 
 
-// ROUTES ADMIN TAMBAHAN
-app.use('/admin', require('./update_status'));
-app.use('/admin', require('./assign_task'));
-app.use('/admin', require('./confirm_done'));
-app.use('/admin', require('./get_petugas')); 
 
 // =======================
-// ROUTE STATUS TUGAS PETUGAS
+// ROUTES ADMIN (DIPROTEKSI DENGAN isAuthenticated & requireRole)
 // =======================
-app.use('/', require('./tugas_status'));
+app.use('/api/auth/admin', require('./routes/auth/adminAuth.routes'));
+
+// Semua fungsionalitas admin di bawah diproteksi khusus untuk role 'admin'
+app.use('/api/admin', isAuthenticated, requireRole(['admin']), require('./routes/admin/adminDashboard.routes'));
+app.use('/api/admin', isAuthenticated, requireRole(['admin']), require('./routes/admin/adminReport.routes'));
+app.use('/api/admin', isAuthenticated, requireRole(['admin']), require('./routes/admin/adminAction.routes'));
+app.use('/api/admin', isAuthenticated, requireRole(['admin']), require('./routes/admin/adminTask.Routes'));
+
+
+app.get('/admin/peta', isAuthenticated, requireRole(['admin']), (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin_peta.html'));
+});
 
 // =======================
 // ROUTE KEPALA DESA
 // =======================
-app.use('/kepala-desa', require('./kepala_desa'));
-app.use('/kepala-desa/login', require('./kepala_desa_login'));
-app.use('/kepala-desa/register', require('./kepala_desa_register'));
+app.use('/api/auth/kades', require('./routes/auth/kadesAuth.routes'));
+// Fungsionalitas kepala desa diproteksi khusus untuk role 'kepala_desa'
+app.use('/kepala-desa', isAuthenticated, requireRole(['kepala_desa']), require('./routes/kepala_desa/kadesTask.routes'));
 
-// =======================
-// ROUTE KHUSUS ADMIN HTML
-// =======================
-app.get('/admin/peta', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'admin_peta.html'));
-});
 
 // =======================
 // START SERVER
