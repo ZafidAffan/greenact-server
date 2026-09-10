@@ -5,8 +5,14 @@ const path = require('path');
 const cors = require('cors');
 const session = require('express-session');
 
+
+
 // 1. Import isAuthenticated dan requireRole sekaligus dari middleware/auth
 const { isAuthenticated, requireRole } = require('./middleware/auth'); 
+
+//2. import rate limitting
+const { reportLimiter, authLimiter, globalLimiter } = require('./middleware/rateLimiter');
+
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -46,14 +52,14 @@ app.use(express.static(path.join(__dirname, 'public')));
 // =======================
 // ROUTES USER (Warga)
 // =======================
-app.use('/api/warga/auth/', require('./routes/auth/wargaAuth.routes'));
+app.use('/api/warga/auth/', authLimiter, require('./routes/auth/wargaAuth.routes'));
 app.use('/locations', require('./routes/get_location.routes')); 
 app.use('/report-status', require('./routes/warga/wargaStatus.routes'));
 app.use('/user', require('./routes/warga/wargaProfile.routes'));
 app.use('/', require("./routes/warga/wilayah.routes"));
 
 // Rute yang membutuhkan hak akses khusus warga (sudah login + role 'warga')
-app.use('/report', isAuthenticated, requireRole(['warga']), require('./routes/warga/createReport.routes')); //
+app.use('/report', reportLimiter, isAuthenticated, requireRole(['warga']), require('./routes/warga/createReport.routes')); //
 app.use('/user-report', isAuthenticated, requireRole(['warga']), require('./routes/warga/wargaReport.routes'));
 
 // =======================

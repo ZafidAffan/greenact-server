@@ -87,6 +87,23 @@ Response API **belum sepenuhnya seragam** antar endpoint (mengikuti implementasi
 
 ---
 
+## Rate Limiting
+
+GreenAct menerapkan rate limiting per-IP menggunakan `express-rate-limit` untuk mencegah spam dan brute-force. Ada 3 jenis limiter:
+
+| Limiter | Window | Max Request | Diterapkan Pada |
+|---------|--------|--------------|------------------|
+| `authLimiter` | 15 menit | 5 request/IP | Endpoint login/auth |
+| `reportLimiter` | 15 menit | 10 request/IP | Endpoint buat laporan /report |
+| `globalLimiter` | 1 menit | 100 request/IP | Endpoint umum *(didefinisikan, belum diterapkan ke route manapun)* |
+
+Header response mengikuti standar (`standardHeaders: true`, `legacyHeaders: false`), sehingga info limit dikirim lewat header `RateLimit-*` (bukan `X-RateLimit-*`).
+
+Saat limit terlampaui, server merespons dengan:
+```json
+{ "error": "Terlalu banyak percobaan login yang gagal. Silakan coba lagi setelah 15 menit." }
+```
+
 ## Auth - Warga
 
 ### Register Warga
